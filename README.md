@@ -1,1 +1,2 @@
-The complete source code will be made publicly available upon acceptance of the paper.
+Wavelet-Guided Frequency Decoupling for Channel-Robust UAV RFFI
+Submit to IEEE WCL
