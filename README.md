@@ -108,7 +108,6 @@ The NLOS condition contains building blockage between the transmitter and receiv
 | Epochs | 100 |
 | Learning rate | `1e-3` |
 | Optimizer | Adam |
-| Weight decay | 0 |
 | Loss | NLLLoss |
 | Random seed | 300 |
 
