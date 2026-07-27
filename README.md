@@ -1,7 +1,7 @@
 # Wavelet-Guided Frequency Decoupling for Channel-Robust UAV RFFI
 
 [![Status](https://img.shields.io/badge/Status-Submitted%20to%20IEEE%20WCL-orange.svg)](#publication-status)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-Implementation-ee4c2c.svg)](https://pytorch.org/)
 
 Official PyTorch implementation accompanying the manuscript:
@@ -13,7 +13,7 @@ Official PyTorch implementation accompanying the manuscript:
 ## Publication Status
 
 > [!IMPORTANT]
-> This manuscript has been submitted to **IEEE Wireless Communications Letters** and has **not yet been formally published**. The title, method description, experimental results, and citation information may be updated during the review process. Please do not cite this work as a published IEEE article at this stage.
+> This manuscript has been submitted to **IEEE Wireless Communications Letters** and has **not yet been formally published**. The title, method description, experimental results, and citation information may be updated during the review process.
 
 ## Overview
 
@@ -21,7 +21,6 @@ Radio frequency fingerprint identification (RFFI) identifies wireless devices th
 
 This project formulates **LOS-to-NLOS UAV RFFI as a domain generalization problem**: only LOS samples are available during training, whereas NLOS samples are reserved exclusively for testing. To improve channel robustness, we propose a **Wavelet-Guided Frequency Decoupling (WGFD)** framework that performs multilevel 2D discrete wavelet transform on task-supervised intermediate feature maps.
 
-The central design is **low-frequency-dominant but high-frequency-aware**:
 
 - approximation responses are emphasized because they are comparatively less sensitive to rapid NLOS-induced local variations;
 - selected detail responses are retained because they may contain complementary device-specific fingerprint cues;
@@ -120,20 +119,8 @@ Channel-Robust-UAV-RFFI/
 ├── WGFD.py              # Model definition: PConv, WGFD, MSFM, CSPA, and Extractor
 ├── train_signal.py      # Training, validation, checkpointing, and NLOS testing
 ├── dataloader.py        # Data loading and preprocessing required by train_signal.py
-├── model_weight/        # Saved checkpoints
-├── logs/                # TensorBoard logs
-├── assets/              # Optional figures used by this README
 └── README.md
 ```
-
-The current training entry imports the following functions from `dataloader.py`:
-
-```python
-read_train_data()
-read_test_data()
-```
-
-Please ensure that `dataloader.py` is included and that its data paths are correctly configured before running the code.
 
 ## Dataset
 
@@ -158,97 +145,6 @@ The experimental subset used in the manuscript contains:
 
 The NLOS condition contains building blockage between the transmitter and receiver. No NLOS samples are used for model training in the reported LOS→NLOS evaluation.
 
-## Data Preparation
-
-The preprocessing pipeline is:
-
-```text
-Raw complex I/Q signals
-        │
-        ▼
-Short-Time Fourier Transform
-        │
-        ▼
-Magnitude calculation and logarithmic scaling
-        │
-        ▼
-Frequency/time-region selection
-        │
-        ▼
-Spectrogram tensor: N × 1 × 350 × 2000
-```
-
-Organize the data into separate LOS and NLOS sets and configure the corresponding paths in `dataloader.py`. A minimal conceptual layout is:
-
-```text
-data/
-├── LOS/
-└── NLOS/
-```
-
-The precise filename rules should follow the original DroneRFb-DIR release and the implementation in `dataloader.py`. Keep the preprocessing settings identical for LOS and NLOS data.
-
-## Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/Edith-xx/Channel-Robust-UAV-RFFI.git
-cd Channel-Robust-UAV-RFFI
-```
-
-Create a recommended environment:
-
-```bash
-conda create -n wgfd python=3.9 -y
-conda activate wgfd
-```
-
-Install the main dependencies:
-
-```bash
-pip install torch numpy scipy scikit-learn tensorboardX tensorboard matplotlib
-```
-
-Install any additional wavelet or signal-processing package required by your local implementation of `WGFD.py` and `dataloader.py`.
-
-## Training and Evaluation
-
-Create the checkpoint directory:
-
-```bash
-mkdir -p model_weight
-```
-
-Check the following settings before running:
-
-1. Configure the LOS and NLOS data paths in `dataloader.py`.
-2. Set the GPU index in `train_signal.py` if necessary.
-3. Confirm that `WGFD.py` provides the `Extractor` class.
-4. Confirm that the classifier output dimension is 18.
-
-Run training and evaluation:
-
-```bash
-python train_signal.py
-```
-
-The current entry point performs the following steps in sequence:
-
-```text
-Load LOS training/validation data
-        ↓
-Train the WGFD network
-        ↓
-Validate after each epoch
-        ↓
-Save the best checkpoint
-        ↓
-Reload the saved checkpoint
-        ↓
-Evaluate on the NLOS test set
-```
-
 ### Default Script Configuration
 
 | Parameter | Default value |
@@ -261,19 +157,8 @@ Evaluate on the NLOS test set
 | Weight decay | 0 |
 | Loss | NLLLoss |
 | Random seed | 300 |
-| GPU index | 0 |
-| Checkpoint path | `model_weight/extractor.pth` |
-| TensorBoard directory | `logs/` |
 
 The submitted manuscript reports experiments conducted in PyTorch on an NVIDIA RTX 3090 GPU, using a learning rate of `0.001` for 100 epochs.
-
-### TensorBoard
-
-Training and validation curves are written to `logs/`. Start TensorBoard with:
-
-```bash
-tensorboard --logdir logs
-```
 
 ## Experimental Protocol
 
@@ -285,11 +170,6 @@ Two protocols are reported:
 | LOS→NLOS | LOS | NLOS | Cross-channel generalization |
 
 The LOS→NLOS protocol is the primary evaluation setting. NLOS data must remain unavailable during training and validation.
-
-For the noise-robustness experiment:
-
-- training SNR is uniformly sampled from `[0, 10]` dB;
-- testing is conducted at fixed SNRs from `-5` to `15` dB on LOS samples.
 
 ## Main Results
 
@@ -345,37 +225,12 @@ Using only approximation branches outperforms using only detail branches under L
 
 Removing the frequency-decoupled branch causes the largest degradation, while the complete three-stream design gives the best result.
 
-## Cross-Channel Consistency Analysis
-
-The manuscript compares sample-level cosine distances between LOS and NLOS features:
-
-| Representation | Intra-class distance ↓ | Inter-class distance ↑ |
-|---|---:|---:|
-| Low-frequency | **0.261 ± 0.126** | **0.839 ± 0.155** |
-| High-frequency | 0.298 ± 0.122 | 0.780 ± 0.168 |
-
-The lower intra-class distance and larger inter-class distance of the low-frequency representation provide empirical support for the low-frequency-dominant design. The retained high-frequency response remains useful as complementary device-specific information.
-
-## Reproducibility Notes
-
-- Use only LOS data for training and validation in the LOS→NLOS experiment.
-- Do not use NLOS samples for model selection or hyperparameter tuning.
-- Apply identical STFT and logarithmic-spectrogram preprocessing to both domains.
-- Keep the class ordering identical across LOS and NLOS datasets.
-- Ensure the model input shape is `1 × 350 × 2000` per sample.
-- Create `model_weight/` before training so that the best checkpoint can be saved.
-- Small deviations from the reported values may occur because of random initialization, data splitting, and hardware/software differences.
-
-## Scope and Limitations
-
-The DroneRFb-DIR acquisition used in this study is treated as approximately quasi-static, so strong Doppler-induced time-varying distortions are not explicitly modeled. High-mobility UAV scenarios with strong Doppler effects are left for future investigation.
-
 ## Citation
 
 Because the manuscript has not yet been published, please use the following temporary citation:
 
 ```bibtex
-@unpublished{cai2026wgfd,
+@article{cai2026wgfd,
   title  = {Wavelet-Guided Frequency Decoupling for Channel-Robust UAV RFFI},
   author = {Cai, Zhenxin and Wang, Yu and Sha, Jin},
   note   = {Manuscript submitted to IEEE Wireless Communications Letters},
@@ -402,13 +257,11 @@ When using DroneRFb-DIR, please also cite the dataset paper:
 
 ## Acknowledgements
 
-We thank the authors of DroneRFb-DIR for releasing the UAV RF signal dataset. We also acknowledge the open-source PyTorch ecosystem and the related channel-robust RFFI studies used as comparison methods in the manuscript.
+We gratefully acknowledge the authors of DroneRFb-DIR for releasing the UAV RF signal dataset. 
 
 ## Contact
 
 For questions about the manuscript or code, please contact:
 
 - Zhenxin Cai: `652022230002@smail.nju.edu.cn`
-- Yu Wang: `yuwang@njupt.edu.cn`
-- Jin Sha: `shajin@nju.edu.cn`
 
