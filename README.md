@@ -29,52 +29,6 @@ This project formulates **LOS-to-NLOS UAV RFFI as a domain generalization proble
 > [!NOTE]
 > In this project, “low frequency” and “high frequency” refer to **wavelet-domain spatial frequencies over the time-frequency plane**, rather than the absolute RF carrier frequency.
 
-## Method
-
-The proposed network contains four main components.
-
-### 1. Direction-Aware Stem with PConv
-
-The input logarithmic spectrogram is first processed by a Pinwheel Convolution (PConv)-based stem. PConv aggregates local time-frequency responses along four asymmetric directions to enhance subtle device-specific fingerprint structures and produce task-oriented intermediate features for subsequent wavelet decoupling.
-
-### 2. Wavelet-Guided Frequency Decoupling
-
-Given an intermediate feature map, WGFD applies two-level 2D-DWT:
-
-- Level 1 produces `z_LL1`, `z_LH1`, `z_HL1`, and `z_HH1`;
-- Level 2 further decomposes `z_LL1` into `z_LL2`, `z_LH2`, `z_HL2`, and `z_HH2`.
-
-The directional detail responses at each level are aggregated as
-
-```text
-z_Hi = |z_LHi| + |z_HLi| + |z_HHi|.
-```
-
-The final WGFD configuration retains
-
-```text
-{z_LL1, z_LL2, z_H1}
-```
-
-and excludes the second-level detail component `z_H2`. The retained components are projected, resized to the input feature-map resolution, concatenated, and recalibrated using channel-wise attention.
-
-### 3. Multi-Stream Fusion Module
-
-Each Multi-Stream Fusion Module (MSFM) combines three complementary branches:
-
-| Branch | Representation | Role |
-|---|---|---|
-| Identity branch | `z_spa` | Preserves the original spatial context |
-| Local branch | `z_local` | Captures fine-grained local time-frequency patterns |
-| WGFD branch | `z_freq` | Provides channel-robust frequency-decoupled cues |
-
-The projected branch features are concatenated, compressed, recalibrated with channel attention, normalized, and combined with the input through a residual connection.
-
-### 4. Cross-Stage Partial Aggregation Backbone
-
-The CSPA backbone contains three stacked stages. Each stage downsamples the input, splits it along the channel dimension, retains one part as a shortcut, and processes the other part through stacked MSFM blocks. Intermediate outputs are concatenated and fused by a `1 × 1` convolution.
-
-This split-transform-merge strategy preserves shallow hardware-related details while progressively aggregating deeper spatial-wavelet identity representations.
 
 ## Framework
 
